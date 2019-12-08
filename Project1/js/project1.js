@@ -68,12 +68,60 @@ function getData(map){
 //create proportional symbols
 function createPropSymbols(data, map, attributes){
   //create a Leaflet GeoJSON layer and add it to the map
-  points = L.geoJson(data, {
+  var points = L.geoJson(data, {
     pointToLayer: function(feature, latlng) {
       return pointToLayer(feature, latlng, attributes);
     }
   }).addTo(map);
   return points;
 };
+
+function createPopup(properties, attribute, layer, radius) {
+    
+    //format population values with commas
+    var pop = numberWithCommas(properties.Population2012);
+    
+    //add city to popup content string
+    var popupContent = "<p><b>City:</b> " + properties.City + "</p>" + "<p><b>Population: </b>" + pop;
+                      
+    //add formatted attribute to panel content string
+    var time = attribute.split("_")[1];
+    var ampm = attribute.split("_")[2];
+    popupContent += "<p><b>Number of birders starting between " + time + " " + ampm + ":</b> " + Math.round(properties[attribute]) + "</p>";
+            
+    //replace the layer popup
+    layer.bindPopup(popupContent, {
+        offset: new L.Point(0, -radius),
+        minWidth: 320
+    });
+}
+
+function pointToLayer(feature, latlng, attributes) {
+    
+    //determine which attribute to visualize
+    var attribute = attributes[0];
+
+    //create marker options
+    var markerOptions = {
+        fillColor: "#FFC300",
+        color: "#BBB9B9",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    };
+    
+    //for each feature, determine value for selected attribute
+    var attValue = number(feature.properties[attribute]);
+            
+    markerOptions.radius = calcPropRadius(attValue);
+    
+    var layer = L.circleMarker(latlng, markerOptions);
+    
+    createPopup(feature.properties, attribute, layer, markerOptions.radius);
+    
+    //return circle marker to pointToLayer option
+    return layer;
+}
+
 
 $(document).ready(getData(map));
